@@ -1,166 +1,255 @@
 // ============================================================
-// MISASI S.A.C. - Datos de Ejemplo para Dashboard
+// MISASI S.A.C. - Data Layer (Google Sheets Live Connection)
 // ============================================================
-// Estos datos simulan la información que vendría del Google Sheets.
-// Para producción, se pueden vincular con Google Sheets API.
 
-const UNIDADES = [
-  { id: 1, empresa: 'DONGFENG', tracto: 'CFF841, 2025', año: 2025 },
-  { id: 2, empresa: 'DONGFENG', tracto: 'CFG704, 2025', año: 2025 },
-  { id: 3, empresa: 'FOTON',    tracto: 'CDI829, 2026', año: 2026 },
-  { id: 4, empresa: 'FOTON',    tracto: 'BWW797, 2023', año: 2023 },
-  { id: 5, empresa: 'FOTON',    tracto: 'BWU917, 2023', año: 2023 },
-  { id: 6, empresa: 'FOTON',    tracto: 'CDJ712, 2026', año: 2026 },
-];
+// ===== CONFIGURACIÓN DE CONEXIÓN =====
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSIRGrrRi5UJE5Xyh54JiPn7Dpv4cRJ_sO85QUTPYLuNMxu62wLsESsXsiw4ATp2qqZ6psYEpXPpaGL/pub?output=csv';
 
-const OPERACIONES = {
-  SOUTHERN: { codigo: 'S', pasos: ['S1', 'S2'], color: '#27AE60', colorLight: '#A9DFBF' },
-  HUDBAY:   { codigo: 'H', pasos: ['H1', 'H2', 'H3'], color: '#2980B9', colorLight: '#AED6F1' },
-  HIERRO:   { codigo: 'A', pasos: ['A1', 'A2', 'A3'], color: '#F39C12', colorLight: '#F9E79F' },
-};
+const AÑO = 2026;
+const COL_FIJAS = 3; // N°, UNIDAD, EMPRESA
+const FILA_DATOS_INICIO = 5; // Fila 6 en Sheet = índice 5 (0-indexed)
+const NUM_FILAS_UNIDADES = 20;
 
-const CODIGOS_ESTADO = {
-  S1: { op: 'SOUTHERN', color: '#27AE60', label: 'Southern Día 1' },
-  S2: { op: 'SOUTHERN', color: '#27AE60', label: 'Southern Día 2' },
-  H1: { op: 'HUDBAY',   color: '#2980B9', label: 'Hudbay Día 1' },
-  H2: { op: 'HUDBAY',   color: '#2980B9', label: 'Hudbay Día 2' },
-  H3: { op: 'HUDBAY',   color: '#2980B9', label: 'Hudbay Día 3' },
-  A1: { op: 'HIERRO',   color: '#F39C12', label: 'Hierro Día 1' },
-  A2: { op: 'HIERRO',   color: '#F39C12', label: 'Hierro Día 2' },
-  A3: { op: 'HIERRO',   color: '#F39C12', label: 'Hierro Día 3' },
-  M:  { op: 'MANT',     color: '#E74C3C', label: 'Mantenimiento' },
-  T:  { op: 'TALLER',   color: '#C0392B', label: 'Taller' },
-  P:  { op: 'PARADA',   color: '#E67E22', label: 'Sin Conductor' },
-};
-
+// Meses y sus días
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-               'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const DIAS_POR_MES = MESES.map((_, i) => new Date(AÑO, i + 1, 0).getDate());
 
-// Generar datos de ejemplo para 3 meses (Enero, Febrero, Marzo)
-function generarDatosEjemplo() {
-  const data = {};
-  const codigosRuta = ['S1','S2','H1','H2','H3','A1','A2','A3'];
-  const codigosParada = ['M','T','P',''];
-  
-  const patrones = {
-    0: [ // Enero
-      ['S1','S2','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','M','S1','S2','H1'],
-      ['H1','H2','H3','H1','H2','H3','M','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','P','P','H1','H2','H3','H1','H2','H3','S1','S2'],
-      ['H1','H2','H3','T','H1','H2','H3','H1','H2','H3','H1','H2','H3','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','P','P','P','H1'],
-      ['H1','H2','M','M','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','H1','H2','H3','P','H1','H2','H3'],
-      ['A1','A2','A3','M','M','M','M','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2'],
-      ['A1','A2','A3','H1','H2','H3','H1','H2','H3','S1','S2','P','P','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','H1','H2','H3','S1'],
-    ],
-    1: [ // Febrero
-      ['S1','S2','S1','S2','T','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2'],
-      ['H1','H2','H3','M','H1','H2','H3','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','P','P','P','H1','H2','H3','H1','H2','H3','S1'],
-      ['H1','H2','H3','T','H1','H2','H3','H1','H2','H3','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2'],
-      ['H1','H2','M','M','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','P','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2'],
-      ['A1','A2','A3','M','M','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2'],
-      ['A1','A2','A3','H1','H2','H3','S1','S2','H1','H2','H3','P','P','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2'],
-    ],
-    2: [ // Marzo
-      ['H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','','','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1'],
-      ['H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','P','P','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2'],
-      ['S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','M','M','H1','H2','H3'],
-      ['H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','P','P','H1','H2','H3','S1','S2'],
-      ['M','M','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1'],
-      ['H1','H2','H3','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','S1','S2','H1','H2','H3','T','T','H1','H2','H3'],
-    ],
-  };
-  
-  return patrones;
+// Offset acumulado de cada mes (columna donde empieza cada mes en los datos)
+const OFFSET_MES = [];
+let acum = 0;
+for (let i = 0; i < 12; i++) {
+  OFFSET_MES.push(acum);
+  acum += DIAS_POR_MES[i];
 }
 
-const DATOS_MENSUALES = generarDatosEjemplo();
+// ===== OPERACIONES Y CÓDIGOS =====
+const OPERACIONES = {
+  SOUTHERN: { codigos: ['S1', 'S2'], pasos: 2, color: '#27ae60' },
+  HUDBAY: { codigos: ['H1', 'H2', 'H3'], pasos: 3, color: '#2980b9' },
+  HIERRO: { codigos: ['A1', 'A2', 'A3'], pasos: 3, color: '#f39c12' },
+};
 
-// Funciones de cálculo
-function contarVueltas(diasArray, operacion) {
-  const ultimoPaso = OPERACIONES[operacion].pasos[OPERACIONES[operacion].pasos.length - 1];
-  return diasArray.filter(d => d === ultimoPaso).length;
+const CODIGOS_RUTA = ['S1', 'S2', 'H1', 'H2', 'H3', 'A1', 'A2', 'A3'];
+const CODIGOS_MANT = ['M', 'T'];
+const CODIGOS_PARADO = ['P'];
+
+// ===== ESTADO GLOBAL =====
+let datosSheet = null;
+let cargandoDatos = false;
+let errorCarga = null;
+
+// ===== FETCH DATOS DEL GOOGLE SHEET =====
+async function cargarDatosSheet() {
+  cargandoDatos = true;
+  errorCarga = null;
+
+  try {
+    const response = await fetch(SHEET_CSV_URL + '&_t=' + Date.now()); // Cache bust
+    if (!response.ok) throw new Error('Error HTTP: ' + response.status);
+
+    const csvText = await response.text();
+    datosSheet = parsearCSV(csvText);
+    cargandoDatos = false;
+    return datosSheet;
+  } catch (error) {
+    console.error('Error cargando datos del Sheet:', error);
+    errorCarga = error.message;
+    cargandoDatos = false;
+    return null;
+  }
 }
 
-function contarDiasRuta(diasArray) {
-  const codigosRuta = ['S1','S2','H1','H2','H3','A1','A2','A3'];
-  return diasArray.filter(d => codigosRuta.includes(d)).length;
+// ===== PARSEAR CSV =====
+function parsearCSV(csvText) {
+  const filas = [];
+  let fila = [];
+  let celda = '';
+  let dentroComillas = false;
+
+  for (let i = 0; i < csvText.length; i++) {
+    const c = csvText[i];
+    const next = csvText[i + 1];
+
+    if (dentroComillas) {
+      if (c === '"' && next === '"') {
+        celda += '"';
+        i++; // saltar siguiente comilla
+      } else if (c === '"') {
+        dentroComillas = false;
+      } else {
+        celda += c;
+      }
+    } else {
+      if (c === '"') {
+        dentroComillas = true;
+      } else if (c === ',') {
+        fila.push(celda.trim());
+        celda = '';
+      } else if (c === '\n' || (c === '\r' && next === '\n')) {
+        fila.push(celda.trim());
+        filas.push(fila);
+        fila = [];
+        celda = '';
+        if (c === '\r') i++; // saltar \n
+      } else {
+        celda += c;
+      }
+    }
+  }
+
+  // Última fila
+  if (celda || fila.length > 0) {
+    fila.push(celda.trim());
+    filas.push(fila);
+  }
+
+  return filas;
 }
 
-function contarDiasParados(diasArray) {
-  return diasArray.filter(d => d === 'P').length;
+// ===== EXTRAER UNIDADES DEL SHEET =====
+function extraerUnidades() {
+  if (!datosSheet) return [];
+
+  const unidades = [];
+
+  for (let i = 0; i < NUM_FILAS_UNIDADES; i++) {
+    const filaIdx = FILA_DATOS_INICIO + i;
+    if (filaIdx >= datosSheet.length) break;
+
+    const fila = datosSheet[filaIdx];
+    const numero = fila[0] || '';
+    const unidad = fila[1] || '';
+    const empresa = fila[2] || '';
+
+    // Solo incluir filas con datos de unidad
+    if (!unidad && !empresa) continue;
+
+    // Extraer todos los códigos diarios (365 columnas)
+    const diasAnuales = [];
+    for (let d = 0; d < acum; d++) {
+      const colIdx = COL_FIJAS + d;
+      const codigo = (fila[colIdx] || '').toUpperCase().trim();
+      diasAnuales.push(codigo);
+    }
+
+    unidades.push({
+      id: parseInt(numero) || (i + 1),
+      tracto: unidad,
+      empresa: empresa,
+      diasAnuales: diasAnuales,
+    });
+  }
+
+  return unidades;
 }
 
-function contarDiasMantenimiento(diasArray) {
-  return diasArray.filter(d => d === 'M' || d === 'T').length;
-}
-
-function contarDiasSinAsignar(diasArray) {
-  return diasArray.filter(d => d === '' || d === undefined).length;
-}
-
-// Calcular métricas por mes
+// ===== CALCULAR MÉTRICAS POR MES =====
 function calcularMetricasMes(mesIndex) {
-  if (!DATOS_MENSUALES[mesIndex]) return null;
-  
-  const metricas = {
+  const unidades = extraerUnidades();
+  if (unidades.length === 0) return null;
+
+  const diasEnMes = DIAS_POR_MES[mesIndex];
+  const offsetMes = OFFSET_MES[mesIndex];
+
+  const resultados = unidades.map(u => {
+    // Extraer los días de este mes
+    const diasMes = u.diasAnuales.slice(offsetMes, offsetMes + diasEnMes);
+
+    // Contar vueltas por operación
+    const vueltas = contarVueltas(diasMes);
+
+    // Contar tipos de días
+    let diasRuta = 0, diasParados = 0, diasMant = 0, diasSinAsignar = 0;
+    diasMes.forEach(code => {
+      if (CODIGOS_RUTA.includes(code)) diasRuta++;
+      else if (CODIGOS_MANT.includes(code)) diasMant++;
+      else if (CODIGOS_PARADO.includes(code)) diasParados++;
+      else diasSinAsignar++;
+    });
+
+    const totalDias = diasEnMes;
+    const operatividad = totalDias > 0 ? (diasRuta / totalDias * 100) : 0;
+
+    return {
+      id: u.id,
+      tracto: u.tracto,
+      empresa: u.empresa,
+      dias: diasMes,
+      vueltasHudbay: vueltas.HUDBAY,
+      vueltasSouthern: vueltas.SOUTHERN,
+      vueltasHierro: vueltas.HIERRO,
+      totalVueltas: vueltas.HUDBAY + vueltas.SOUTHERN + vueltas.HIERRO,
+      diasRuta,
+      diasParados,
+      diasMantenimiento: diasMant,
+      diasSinAsignar,
+      operatividad,
+    };
+  });
+
+  // Totales
+  const totales = {
+    vueltasHudbay: resultados.reduce((s, u) => s + u.vueltasHudbay, 0),
+    vueltasSouthern: resultados.reduce((s, u) => s + u.vueltasSouthern, 0),
+    vueltasHierro: resultados.reduce((s, u) => s + u.vueltasHierro, 0),
+    totalVueltas: resultados.reduce((s, u) => s + u.totalVueltas, 0),
+    diasRuta: resultados.reduce((s, u) => s + u.diasRuta, 0),
+    diasParados: resultados.reduce((s, u) => s + u.diasParados, 0),
+    diasMantenimiento: resultados.reduce((s, u) => s + u.diasMantenimiento, 0),
+    diasSinAsignar: resultados.reduce((s, u) => s + u.diasSinAsignar, 0),
+    operatividad: 0,
+  };
+
+  const totalDiasTodos = totales.diasRuta + totales.diasParados + totales.diasMantenimiento + totales.diasSinAsignar;
+  totales.operatividad = totalDiasTodos > 0 ? (totales.diasRuta / totalDiasTodos * 100) : 0;
+
+  return {
     mes: MESES[mesIndex],
     mesIndex: mesIndex,
-    unidades: [],
-    totales: {
-      vueltasHudbay: 0,
-      vueltasSouthern: 0,
-      vueltasHierro: 0,
-      totalVueltas: 0,
-      diasRuta: 0,
-      diasParados: 0,
-      diasMantenimiento: 0,
-      diasSinAsignar: 0,
-    }
+    diasEnMes: diasEnMes,
+    unidades: resultados,
+    totales: totales,
   };
-  
-  UNIDADES.forEach((unidad, i) => {
-    const dias = DATOS_MENSUALES[mesIndex][i] || [];
-    const vueltasH = contarVueltas(dias, 'HUDBAY');
-    const vueltasS = contarVueltas(dias, 'SOUTHERN');
-    const vueltasA = contarVueltas(dias, 'HIERRO');
-    
-    const uMetricas = {
-      ...unidad,
-      dias: dias,
-      vueltasHudbay: vueltasH,
-      vueltasSouthern: vueltasS,
-      vueltasHierro: vueltasA,
-      totalVueltas: vueltasH + vueltasS + vueltasA,
-      diasRuta: contarDiasRuta(dias),
-      diasParados: contarDiasParados(dias),
-      diasMantenimiento: contarDiasMantenimiento(dias),
-      diasSinAsignar: contarDiasSinAsignar(dias),
-    };
-    uMetricas.operatividad = dias.length > 0 ? (uMetricas.diasRuta / dias.length * 100) : 0;
-    
-    metricas.unidades.push(uMetricas);
-    metricas.totales.vueltasHudbay += vueltasH;
-    metricas.totales.vueltasSouthern += vueltasS;
-    metricas.totales.vueltasHierro += vueltasA;
-    metricas.totales.totalVueltas += vueltasH + vueltasS + vueltasA;
-    metricas.totales.diasRuta += uMetricas.diasRuta;
-    metricas.totales.diasParados += uMetricas.diasParados;
-    metricas.totales.diasMantenimiento += uMetricas.diasMantenimiento;
-    metricas.totales.diasSinAsignar += uMetricas.diasSinAsignar;
-  });
-  
-  const totalDias = metricas.totales.diasRuta + metricas.totales.diasParados + 
-                    metricas.totales.diasMantenimiento + metricas.totales.diasSinAsignar;
-  metricas.totales.operatividad = totalDias > 0 ? (metricas.totales.diasRuta / totalDias * 100) : 0;
-  
-  return metricas;
 }
 
-// Calcular métricas para todos los meses disponibles
+// ===== CONTAR VUELTAS (lógica de secuencias) =====
+function contarVueltas(diasMes) {
+  const vueltas = { SOUTHERN: 0, HUDBAY: 0, HIERRO: 0 };
+
+  // Para cada operación, buscar secuencias completas
+  for (const [opName, opConfig] of Object.entries(OPERACIONES)) {
+    const { codigos, pasos } = opConfig;
+    let paso = 0;
+
+    for (let d = 0; d < diasMes.length; d++) {
+      const code = diasMes[d];
+
+      if (code === codigos[paso]) {
+        paso++;
+        if (paso === pasos) {
+          vueltas[opName]++;
+          paso = 0; // Reiniciar para siguiente vuelta
+        }
+      } else if (code === codigos[0]) {
+        // Reiniciar secuencia desde el primer código
+        paso = 1;
+      } else if (!codigos.includes(code)) {
+        // Código de otra operación o estado, reiniciar
+        paso = 0;
+      }
+    }
+  }
+
+  return vueltas;
+}
+
+// ===== CALCULAR TODAS LAS MÉTRICAS (12 meses) =====
 function calcularTodasLasMetricas() {
   const todas = [];
-  for (let i = 0; i < 12; i++) {
-    const m = calcularMetricasMes(i);
-    if (m) todas.push(m);
+  for (let m = 0; m < 12; m++) {
+    const metricas = calcularMetricasMes(m);
+    if (metricas) todas.push(metricas);
   }
   return todas;
 }
