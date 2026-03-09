@@ -96,7 +96,7 @@
           <label>📅 Mes:</label>
           <select id="month-select">
             <option value="0">Enero 2026</option>
-            <option value="1" selected>Febrero 2026</option>
+            <option value="1">Febrero 2026</option>
             <option value="2">Marzo 2026</option>
             <option value="3">Abril 2026</option>
             <option value="4">Mayo 2026</option>
@@ -109,9 +109,10 @@
             <option value="11">Diciembre 2026</option>
           </select>
         </div>
+        <button onclick="refrescarDatos()" class="refresh-btn" title="Refrescar datos del Sheet">🔄</button>
         <div class="live-badge">
           <span class="live-dot"></span>
-          EN TIEMPO REAL
+          CONECTADO A SHEETS
         </div>
       </div>
     </header>
