@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="MISASI S.A.C. - Dashboard de Seguimiento de Unidades de Transporte. Control diario de flota, métricas de rendimiento y análisis de productividad.">
+  <title>MISASI S.A.C. — Seguimiento de Unidades</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a href="#" class="sidebar-logo">
+        <div class="sidebar-logo-icon">🚛</div>
+        <div class="sidebar-logo-text">
+          <span class="company">MISASI S.A.C.</span>
+          <span class="subtitle">Seguimiento Unidades</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-title">Menú Principal</div>
+
+      <a href="#" class="nav-item active" data-page="resumen">
+        <span class="icon">📊</span>
+        <span>Resumen General</span>
+      </a>
+      <a href="#" class="nav-item" data-page="seguimiento">
+        <span class="icon">📅</span>
+        <span>Seguimiento Diario</span>
+      </a>
+      <a href="#" class="nav-item" data-page="metricas">
+        <span class="icon">📈</span>
+        <span>Métricas y Vueltas</span>
+      </a>
+      <a href="#" class="nav-item" data-page="paradas">
+        <span class="icon">⚠️</span>
+        <span>Análisis de Paradas</span>
+      </a>
+
+      <div class="nav-section-title" style="margin-top: 24px;">Leyenda</div>
+      <div style="padding: 8px 16px; font-size: 10px;">
+        <div class="leyenda-item" style="margin-bottom: 4px;">
+          <span class="leyenda-color" style="background: var(--southern);"></span>
+          <span>S1→S2 = 1 vuelta SOUTHERN</span>
+        </div>
+        <div class="leyenda-item" style="margin-bottom: 4px;">
+          <span class="leyenda-color" style="background: var(--hudbay);"></span>
+          <span>H1→H2→H3 = 1 vuelta HUDBAY</span>
+        </div>
+        <div class="leyenda-item" style="margin-bottom: 4px;">
+          <span class="leyenda-color" style="background: var(--hierro);"></span>
+          <span>A1→A2→A3 = 1 vuelta HIERRO</span>
+        </div>
+        <div class="leyenda-item" style="margin-bottom: 4px;">
+          <span class="leyenda-color" style="background: var(--mant);"></span>
+          <span>M = Mantenimiento</span>
+        </div>
+        <div class="leyenda-item" style="margin-bottom: 4px;">
+          <span class="leyenda-color" style="background: var(--taller);"></span>
+          <span>T = Taller</span>
+        </div>
+        <div class="leyenda-item">
+          <span class="leyenda-color" style="background: var(--parada);"></span>
+          <span>P = Sin conductor</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      MISASI S.A.C. © 2026<br>
+      Seguimiento de Unidades v1.0
+    </div>
+  </nav>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="main-content">
+
+    <!-- TOP BAR -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div>
+          <h1 id="page-title" class="page-title">Resumen General</h1>
+          <p id="page-subtitle" class="page-subtitle">Vista general del estado de la flota</p>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <div class="month-selector">
+          <label>📅 Mes:</label>
+          <select id="month-select">
+            <option value="0">Enero 2026</option>
+            <option value="1" selected>Febrero 2026</option>
+            <option value="2">Marzo 2026</option>
+            <option value="3">Abril 2026</option>
+            <option value="4">Mayo 2026</option>
+            <option value="5">Junio 2026</option>
+            <option value="6">Julio 2026</option>
+            <option value="7">Agosto 2026</option>
+            <option value="8">Septiembre 2026</option>
+            <option value="9">Octubre 2026</option>
+            <option value="10">Noviembre 2026</option>
+            <option value="11">Diciembre 2026</option>
+          </select>
+        </div>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          EN TIEMPO REAL
+        </div>
+      </div>
+    </header>
+
+    <div class="page-container">
+
+      <!-- ============================================================ -->
+      <!-- PAGE 1: RESUMEN GENERAL                                      -->
+      <!-- ============================================================ -->
+      <div id="page-resumen" class="page active">
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--kpi-color: var(--accent-purple);">
+            <div class="kpi-label">Total Vueltas</div>
+            <div class="kpi-value" id="kpi-total-vueltas">—</div>
+            <div class="kpi-detail">
+              <span id="kpi-detail-hudbay">HUDBAY: —</span> ·
+              <span id="kpi-detail-southern">SOUTHERN: —</span> ·
+              <span id="kpi-detail-hierro">HIERRO: —</span>
+            </div>
+            <div class="kpi-icon">🔄</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--accent-blue);">
+            <div class="kpi-label">Días en Ruta</div>
+            <div class="kpi-value" id="kpi-dias-ruta">—</div>
+            <div class="kpi-detail">Días operativos totales</div>
+            <div class="kpi-icon">🛣️</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--accent-orange);">
+            <div class="kpi-label">Días Parados</div>
+            <div class="kpi-value" id="kpi-dias-parados">—</div>
+            <div class="kpi-detail">Sin conductor + sin asignar</div>
+            <div class="kpi-icon">⏸️</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--accent-red);">
+            <div class="kpi-label">Días Mantenimiento</div>
+            <div class="kpi-value" id="kpi-dias-mant">—</div>
+            <div class="kpi-detail">Mantenimiento + Taller</div>
+            <div class="kpi-icon">🔧</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--accent-green);">
+            <div class="kpi-label">Operatividad</div>
+            <div class="kpi-value" id="kpi-operatividad">—</div>
+            <div class="kpi-detail">% días en ruta del total</div>
+            <div class="kpi-icon">✅</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--accent-cyan);">
+            <div class="kpi-label">Unidades Activas</div>
+            <div class="kpi-value" id="kpi-unidades">—</div>
+            <div class="kpi-detail">Flota total registrada</div>
+            <div class="kpi-icon">🚛</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">🍩</span> Distribución de Estado</span>
+            </div>
+            <div class="card-body">
+              <div style="max-width: 320px; margin: 0 auto; position: relative;">
+                <canvas id="chart-donut-resumen"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">📊</span> Vueltas por Unidad</span>
+            </div>
+            <div class="card-body">
+              <div style="position: relative; height: 280px;">
+                <canvas id="chart-barras-resumen"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fleet Status -->
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title"><span class="icon">🚛</span> Estado de la Flota</span>
+          </div>
+          <div class="card-body">
+            <div id="fleet-status-container" class="fleet-status-grid">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PAGE 2: SEGUIMIENTO DIARIO                                   -->
+      <!-- ============================================================ -->
+      <div id="page-seguimiento" class="page">
+
+        <!-- Leyenda -->
+        <div class="leyenda">
+          <div class="leyenda-item"><span class="leyenda-color" style="background: var(--southern);"></span> S1/S2 –
+            SOUTHERN</div>
+          <div class="leyenda-item"><span class="leyenda-color" style="background: var(--hudbay);"></span> H1/H2/H3 –
+            HUDBAY</div>
+          <div class="leyenda-item"><span class="leyenda-color" style="background: var(--hierro);"></span> A1/A2/A3 –
+            HIERRO</div>
+          <div class="leyenda-item"><span class="leyenda-color" style="background: var(--mant);"></span> M –
+            Mantenimiento</div>
+          <div class="leyenda-item"><span class="leyenda-color" style="background: var(--taller);"></span> T – Taller
+          </div>
+          <div class="leyenda-item"><span class="leyenda-color" style="background: var(--parada);"></span> P – Sin
+            Conductor</div>
+          <div class="leyenda-item"><span class="leyenda-color" style="background: rgba(107,114,128,0.3);"></span> — Sin
+            Asignar</div>
+        </div>
+
+        <!-- Tracking Grid -->
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title"><span class="icon">📅</span> Grilla de Seguimiento Diario</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="tracking-grid-container">
+              <table class="tracking-grid">
+                <thead>
+                  <tr id="tracking-grid-header"></tr>
+                </thead>
+                <tbody id="tracking-grid-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Table -->
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title"><span class="icon">📋</span> Resumen de Operación</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tracto</th>
+                  <th style="text-align:center">V. HUDBAY</th>
+                  <th style="text-align:center">V. SOUTHERN</th>
+                  <th style="text-align:center">V. HIERRO</th>
+                  <th style="text-align:center">TOTAL</th>
+                  <th style="text-align:center">Días Ruta</th>
+                  <th style="text-align:center">Parados</th>
+                  <th style="text-align:center">Mantenim.</th>
+                  <th style="text-align:center">Operatividad</th>
+                </tr>
+              </thead>
+              <tbody id="seguimiento-resumen-body"></tbody>
+              <tfoot>
+                <tr id="seguimiento-resumen-totals" style="background: rgba(59,130,246,0.08); font-weight: 700;">
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PAGE 3: MÉTRICAS Y VUELTAS                                   -->
+      <!-- ============================================================ -->
+      <div id="page-metricas" class="page">
+
+        <!-- Comparativa por mes -->
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title"><span class="icon">📅</span> Comparativa Mensual — Vueltas por Mes</span>
+          </div>
+          <div class="card-body">
+            <div id="month-comparison-container" class="month-comparison-grid">
+              <!-- Dynamic month cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparativa mensual chart + Tendencia -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">📊</span> Comparativa Mensual</span>
+            </div>
+            <div class="card-body">
+              <div style="position: relative; height: 300px;">
+                <canvas id="chart-comparativa-mensual"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">📈</span> Tendencia por Operación</span>
+            </div>
+            <div class="card-body">
+              <div style="position: relative; height: 300px;">
+                <canvas id="chart-tendencia-mensual"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vueltas del mes + Radar -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">📊</span> Vueltas por Unidad — Mes Seleccionado</span>
+            </div>
+            <div class="card-body">
+              <div style="position: relative; height: 300px;">
+                <canvas id="chart-vueltas-metricas"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">🎯</span> Radar de Rendimiento por Unidad</span>
+            </div>
+            <div class="card-body">
+              <div style="max-width: 400px; margin: 0 auto; position: relative;">
+                <canvas id="chart-radar-unidades"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PAGE 4: ANÁLISIS DE PARADAS                                  -->
+      <!-- ============================================================ -->
+      <div id="page-paradas" class="page">
+
+        <!-- KPIs Paradas -->
+        <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="kpi-card" style="--kpi-color: var(--accent-orange);">
+            <div class="kpi-label">Días Parados</div>
+            <div class="kpi-value" id="paradas-total-parados">—</div>
+            <div class="kpi-detail">Sin conductor disponible</div>
+            <div class="kpi-icon">⏸️</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--accent-red);">
+            <div class="kpi-label">Días Mantenimiento</div>
+            <div class="kpi-value" id="paradas-total-mant">—</div>
+            <div class="kpi-detail">Mantenimiento + Taller</div>
+            <div class="kpi-icon">🔧</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--text-muted);">
+            <div class="kpi-label">Sin Asignar</div>
+            <div class="kpi-value" id="paradas-total-sinasignar">—</div>
+            <div class="kpi-detail">Días sin operación asignada</div>
+            <div class="kpi-icon">❓</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color: var(--accent-yellow);">
+            <div class="kpi-label">% Inactividad</div>
+            <div class="kpi-value" id="paradas-pct-inactivo">—</div>
+            <div class="kpi-detail">Del total de días-unidad</div>
+            <div class="kpi-icon">📉</div>
+          </div>
+        </div>
+
+        <!-- Detail Table -->
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title"><span class="icon">📋</span> Detalle de Paradas por Unidad</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tracto</th>
+                  <th style="text-align:center">Empresa</th>
+                  <th style="text-align:center">Días Ruta</th>
+                  <th style="text-align:center">Parados (P)</th>
+                  <th style="text-align:center">Mantenim. (M/T)</th>
+                  <th style="text-align:center">Sin Asignar</th>
+                  <th style="text-align:center">Total Días</th>
+                  <th style="text-align:center">% Inactividad</th>
+                </tr>
+              </thead>
+              <tbody id="paradas-detail-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">📊</span> Días por Tipo de Estado</span>
+            </div>
+            <div class="card-body">
+              <div style="position: relative; height: 300px;">
+                <canvas id="chart-apiladas-paradas"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><span class="icon">📈</span> % Operatividad por Unidad</span>
+            </div>
+            <div class="card-body">
+              <div style="position: relative; height: 300px;">
+                <canvas id="chart-operatividad-paradas"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card grid-full">
+          <div class="card-header">
+            <span class="card-title"><span class="icon">🍩</span> Distribución General de Tiempo</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="max-width: 350px; margin: 0 auto;">
+              <canvas id="chart-donut-paradas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+
+</body>
+
+</html>
