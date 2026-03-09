@@ -1,19 +1,73 @@
 // ============================================================
-// MISASI S.A.C. - App Main Logic
+// MISASI S.A.C. - App Main Logic (Live Google Sheets Connection)
 // ============================================================
 
 let currentPage = 'resumen';
-let currentMonth = 1; // Febrero por defecto (0-indexed)
+let currentMonth = new Date().getMonth(); // Mes actual por defecto
 let todasMetricas = [];
 
 // ==================== INITIALIZATION ====================
 
-document.addEventListener('DOMContentLoaded', () => {
-  todasMetricas = calcularTodasLasMetricas();
+document.addEventListener('DOMContentLoaded', async () => {
   initNavigation();
   initMonthSelector();
-  renderCurrentPage();
+
+  // Mostrar estado de carga
+  mostrarEstadoCarga('Conectando con Google Sheets...');
+
+  // Cargar datos del Sheet
+  const datos = await cargarDatosSheet();
+
+  if (datos) {
+    todasMetricas = calcularTodasLasMetricas();
+    ocultarEstadoCarga();
+    renderCurrentPage();
+
+    // Auto-refrescar cada 5 minutos
+    setInterval(async () => {
+      await cargarDatosSheet();
+      todasMetricas = calcularTodasLasMetricas();
+      renderCurrentPage();
+      actualizarTimestamp();
+    }, 5 * 60 * 1000);
+
+    actualizarTimestamp();
+  } else {
+    mostrarEstadoCarga('⚠️ Error conectando con Google Sheets. Verifica que el Sheet esté publicado.');
+  }
 });
+
+function mostrarEstadoCarga(mensaje) {
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(p => {
+    if (p.id === 'page-resumen') {
+      p.classList.add('active');
+      const kpiGrid = p.querySelector('.kpi-grid');
+      if (kpiGrid) {
+        kpiGrid.insertAdjacentHTML('beforebegin',
+          `<div id="loading-indicator" class="card grid-full" style="text-align: center; padding: 40px;">
+            <div style="font-size: 24px; margin-bottom: 12px;">⏳</div>
+            <div style="font-size: 14px; color: var(--text-secondary);">${mensaje}</div>
+          </div>`
+        );
+      }
+    }
+  });
+}
+
+function ocultarEstadoCarga() {
+  const loading = document.getElementById('loading-indicator');
+  if (loading) loading.remove();
+}
+
+function actualizarTimestamp() {
+  const badge = document.querySelector('.live-badge');
+  if (badge) {
+    const ahora = new Date();
+    const hora = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+    badge.innerHTML = `<span class="live-dot"></span> ACTUALIZADO ${hora}`;
+  }
+}
 
 // ==================== NAVIGATION ====================
 
@@ -61,6 +115,9 @@ function initMonthSelector() {
   const select = document.getElementById('month-select');
   if (!select) return;
 
+  // Seleccionar el mes actual
+  select.value = currentMonth;
+
   select.addEventListener('change', (e) => {
     currentMonth = parseInt(e.target.value);
     renderCurrentPage();
@@ -75,7 +132,7 @@ function getMetricasActuales() {
 
 function renderCurrentPage() {
   const metricas = getMetricasActuales();
-  if (!metricas) return;
+  if (!metricas || metricas.unidades.length === 0) return;
 
   switch (currentPage) {
     case 'resumen':
@@ -102,7 +159,7 @@ function renderResumen(metricas) {
   document.getElementById('kpi-dias-parados').textContent = metricas.totales.diasParados + metricas.totales.diasSinAsignar;
   document.getElementById('kpi-dias-mant').textContent = metricas.totales.diasMantenimiento;
   document.getElementById('kpi-operatividad').textContent = metricas.totales.operatividad.toFixed(1) + '%';
-  document.getElementById('kpi-unidades').textContent = UNIDADES.length;
+  document.getElementById('kpi-unidades').textContent = metricas.unidades.length;
 
   // Detalles KPIs
   document.getElementById('kpi-detail-hudbay').textContent = `HUDBAY: ${metricas.totales.vueltasHudbay}`;
@@ -168,7 +225,7 @@ function renderSeguimiento(metricas) {
   const container = document.getElementById('tracking-grid-body');
   if (!container) return;
 
-  const diasEnMes = metricas.unidades[0]?.dias.length || 28;
+  const diasEnMes = metricas.diasEnMes;
 
   // Render header
   const headerRow = document.getElementById('tracking-grid-header');
@@ -178,7 +235,7 @@ function renderSeguimiento(metricas) {
     <th class="col-fixed">Tracto</th>
   `;
   for (let d = 1; d <= diasEnMes; d++) {
-    const fecha = new Date(2026, currentMonth, d);
+    const fecha = new Date(AÑO, currentMonth, d);
     const diaSemana = ['D', 'L', 'M', 'X', 'J', 'V', 'S'][fecha.getDay()];
     const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
     headerHTML += `<th style="${esFinDeSemana ? 'color: var(--accent-yellow);' : ''}">${d}<br><span style="font-size:8px">${diaSemana}</span></th>`;
@@ -335,4 +392,15 @@ function resizeAllCharts() {
       }
     });
   }, 100);
+}
+
+// ==================== BOTÓN REFRESCAR ====================
+async function refrescarDatos() {
+  const badge = document.querySelector('.live-badge');
+  if (badge) badge.innerHTML = '<span class="live-dot"></span> ACTUALIZANDO...';
+
+  await cargarDatosSheet();
+  todasMetricas = calcularTodasLasMetricas();
+  renderCurrentPage();
+  actualizarTimestamp();
 }
