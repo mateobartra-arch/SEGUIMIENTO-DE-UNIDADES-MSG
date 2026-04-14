@@ -25,9 +25,9 @@ for (let i = 0; i < 12; i++) {
 
 // ===== OPERACIONES Y CÓDIGOS =====
 const OPERACIONES = {
-  SOUTHERN: { codigos: ['S1', 'S2'], pasos: 2, color: '#27ae60' },
-  HUDBAY: { codigos: ['H1', 'H2', 'H3'], pasos: 3, color: '#2980b9' },
-  HIERRO: { codigos: ['A1', 'A2', 'A3'], pasos: 3, color: '#f39c12' },
+  SOUTHERN: { codigos: ['S1', 'S2'], triggerVuelta: 'S2', color: '#27ae60' },
+  HUDBAY:   { codigos: ['H1', 'H2', 'H3'], triggerVuelta: 'H2', color: '#2980b9' },
+  HIERRO:   { codigos: ['A1', 'A2', 'A3'], triggerVuelta: 'A2', color: '#f39c12' },
 };
 
 const CODIGOS_RUTA = ['S1', 'S2', 'H1', 'H2', 'H3', 'A1', 'A2', 'A3'];
@@ -213,32 +213,21 @@ function calcularMetricasMes(mesIndex) {
   };
 }
 
-// ===== CONTAR VUELTAS (lógica de secuencias) =====
+// ===== CONTAR VUELTAS =====
+// Regla de negocio:
+//   HUDBAY   → se contabiliza UNA vuelta cada vez que aparece H2 en el mes
+//   SOUTHERN → se contabiliza UNA vuelta cada vez que aparece S2 en el mes
+//   HIERRO   → se contabiliza UNA vuelta cada vez que aparece A2 en el mes
+//
+// H1/H3, S1, A1/A3 son días de tránsito de la misma vuelta;
+// el "punto de conteo" es siempre el código intermedio/final de llegada.
 function contarVueltas(diasMes) {
   const vueltas = { SOUTHERN: 0, HUDBAY: 0, HIERRO: 0 };
 
-  // Para cada operación, buscar secuencias completas
-  for (const [opName, opConfig] of Object.entries(OPERACIONES)) {
-    const { codigos, pasos } = opConfig;
-    let paso = 0;
-
-    for (let d = 0; d < diasMes.length; d++) {
-      const code = diasMes[d];
-
-      if (code === codigos[paso]) {
-        paso++;
-        if (paso === pasos) {
-          vueltas[opName]++;
-          paso = 0; // Reiniciar para siguiente vuelta
-        }
-      } else if (code === codigos[0]) {
-        // Reiniciar secuencia desde el primer código
-        paso = 1;
-      } else if (!codigos.includes(code)) {
-        // Código de otra operación o estado, reiniciar
-        paso = 0;
-      }
-    }
+  for (const code of diasMes) {
+    if (code === 'H2') vueltas.HUDBAY++;
+    if (code === 'S2') vueltas.SOUTHERN++;
+    if (code === 'A2') vueltas.HIERRO++;
   }
 
   return vueltas;
